@@ -5,58 +5,60 @@ import { styled } from '@mui/material/styles';
 import { Box, Typography, } from '@mui/material';
 
 import OuterCircle from './outerCircle';
-import { FADE_DURATION, GROUPS, } from '../constants';
+import { FADE_DURATION, QUADRANTS, QUADRANT_PROPERTIES, } from '../constants';
 
 const CircleTriadContainer = styled((props) => <Box {...props} />
 )((props) => ({
   display: 'flex',
-  flexDirection: props.right || props.left ? 'column' : 'row',
-  [props.right || props.left ? 'height' : 'width']: '11em',
-  marginTop: props.right || props.left ? 'auto' : 0,
-  marginRight: props.left ? 0 : 'auto',
-  marginBottom: props.right || props.left ? 'auto' : 0,
-  marginLeft: props.right ? 0 : 'auto',
-  ...(props.left && { position: 'relative', zIndex: 2, }),
+  flexDirection:
+    props[QUADRANTS.RIGHT] || props[QUADRANTS.LEFT] ? 'column' : 'row',
+  [props[QUADRANTS.RIGHT] || props[QUADRANTS.LEFT] ? 'height' : 'width']:
+    '11em',
+  marginTop: props[QUADRANTS.RIGHT] || props[QUADRANTS.LEFT] ? 'auto' : 0,
+  marginRight: props[QUADRANTS.LEFT] ? 0 : 'auto',
+  marginBottom: props[QUADRANTS.RIGHT] || props[QUADRANTS.LEFT] ? 'auto' : 0,
+  marginLeft: props[QUADRANTS.RIGHT] ? 0 : 'auto',
+  ...(props[QUADRANTS.LEFT] && { position: 'relative', zIndex: 2, }),
 }));
 
-const getTextAlign = (group) => {
-  if (group === 'left') {
+const getTextAlign = (quadrant) => {
+  if (quadrant === QUADRANTS.LEFT) {
     return 'right'
   }
-  if (group === 'right') {
+  if (quadrant === QUADRANTS.RIGHT) {
     return 'left';
   }
   return 'center';
 }
 
 const Heading = ({
-  group,
-  groupHeading,
+  quadrant,
+  quadrantHeading,
   circleHeading,
-  groupCueAnimation,
+  quadrantCueAnimation,
   isFadingOut,
-  mobileGroupCueAnimations,
+  mobileQuadrantCueAnimations,
 }) => {
-  const [mobileAnimationGroup, setMobileAnimationGroup] = useState(null);
+  const [mobileAnimationQuadrant, setMobileAnimationQuadrant] = useState(null);
 
   useEffect(() => {
-    if (isMobile && groupCueAnimation && group === 'bottom') {
-      Object.keys(GROUPS).forEach((GROUP) =>
+    if (isMobile && quadrantCueAnimation && quadrant === QUADRANTS.BOTTOM) {
+      Object.keys(QUADRANT_PROPERTIES).forEach((quadrant) =>
         setTimeout(() =>
-          setMobileAnimationGroup(GROUP),
-          GROUPS[GROUP].animationDelay
+          setMobileAnimationQuadrant(quadrant),
+          QUADRANT_PROPERTIES[quadrant].animationDelay
         )
       );
     }
-  }, [group, groupCueAnimation,]);
+  }, [quadrant, quadrantCueAnimation,]);
 
-  const mobileAnimationHeading = mobileAnimationGroup ?
-    GROUPS[mobileAnimationGroup].heading : null;
+  const mobileAnimationHeading = mobileAnimationQuadrant ?
+    QUADRANT_PROPERTIES[mobileAnimationQuadrant].heading : null;
 
-  const cueAnimation = mobileGroupCueAnimations && mobileAnimationGroup ?
-    mobileGroupCueAnimations.find(animationGroup =>
-      animationGroup[mobileAnimationGroup])[mobileAnimationGroup] :
-    groupCueAnimation;
+  const cueAnimation = mobileQuadrantCueAnimations && mobileAnimationQuadrant ?
+    mobileQuadrantCueAnimations.find(animationQuadrant =>
+      animationQuadrant[mobileAnimationQuadrant])[mobileAnimationQuadrant] :
+    quadrantCueAnimation;
 
   const fadeInAnimation = keyframes`
     from {
@@ -80,24 +82,30 @@ const Heading = ({
     <Typography
       sx={{
         minWidth:
-          group === 'top' || group === 'bottom' ? 'max-content' : 'initial',
+          quadrant === QUADRANTS.TOP || quadrant === QUADRANTS.BOTTOM ?
+          'max-content' : 'initial',
         maxWidth:
-          group === 'right' || group === 'left' ?
+          quadrant === QUADRANTS.RIGHT || quadrant === QUADRANTS.LEFT ?
           ['max-content', 'min-content', 'max-content', 'max-content',] :
           'initial',
         fontFamily: 'Suez One',
         ...(!isMobile && {
-          fontSize: groupHeading ?
+          fontSize: quadrantHeading ?
             ['1.5em', '1.5em', '2em', '2em',] :
             ['1em', '1.25em', '1.5em', '1.5em',],
         }),
         ...(isMobile && { fontSize: '2em', }),
-        textAlign: getTextAlign(group),
-        ...(!isMobile && { marginTop: group === 'bottom' ? '83%' : 'auto' }),
+        textAlign: getTextAlign(quadrant),
+        ...(
+          !isMobile && {
+            marginTop: quadrant === QUADRANTS.BOTTOM ? '83%' : 'auto'
+        }),
         ...(isMobile && { marginTop: '7em', }),
-        marginBottom: group === 'top' ? '85%' : 'auto',
-        marginRight: group === 'left' ? ['60%', '56%', '60%', '64%',] : 'auto',
-        marginLeft: group === 'right' ? ['70%', '60%', '70%', '75%',] : 'auto',
+        marginBottom: quadrant === QUADRANTS.TOP ? '85%' : 'auto',
+        marginRight: quadrant === QUADRANTS.LEFT ?
+          ['60%', '56%', '60%', '64%',] : 'auto',
+        marginLeft: quadrant === QUADRANTS.RIGHT ?
+          ['70%', '60%', '70%', '75%',] : 'auto',
         opacity: isFadingOut ? 1 : 0,
         ...(cueAnimation ?
           cueAnimation : {
@@ -111,15 +119,15 @@ const Heading = ({
       }}
       variant={circleHeading ? 'h2' : 'h1'}
     >
-      {mobileAnimationHeading || groupHeading || circleHeading}
+      {mobileAnimationHeading || quadrantHeading || circleHeading}
     </Typography>
   );
 };
 
 const CircleTriad = ({
   circles,
-  group,
-  groupHeading,
+  quadrant,
+  quadrantHeading,
   expandedCircle,
   onExpandCircle,
   hoveredCircle,
@@ -127,12 +135,12 @@ const CircleTriad = ({
   animateInReady,
   hasAnimatedIn,
   activatedQuadrant,
-  getGroupCueAnimation,
+  getQuadrantCueAnimation,
   blockHoverEffects,
   easterEgged,
 }) => {
   const circleHeading = !blockHoverEffects && hoveredCircle !== null && circles
-    .filter(circle => circle.group === group)
+    .filter(circle => circle.quadrant === quadrant)
     .find(circle => circle.index === hoveredCircle || (
       typeof hoveredCircle === 'string' &&
       circle.index === parseInt(hoveredCircle)
@@ -141,12 +149,12 @@ const CircleTriad = ({
   const quadrantIsActive =
     !blockHoverEffects &&
     !circleHeading &&
-    activatedQuadrant === group;
-  const isGroupHeadingFadingOut =
+    activatedQuadrant === quadrant;
+  const isQuadrantHeadingFadingOut =
     !blockHoverEffects &&
     !circleHeading &&
     activatedQuadrant &&
-    activatedQuadrant.includes(group) &&
+    activatedQuadrant.includes(quadrant) &&
     activatedQuadrant.includes('--fadeOut');
 
   const isCircleHeadingFadingOut =
@@ -155,14 +163,14 @@ const CircleTriad = ({
     typeof hoveredCircle === 'string' &&
     hoveredCircle.includes('--fadeOut');
 
-  const groupCueAnimation =
-    typeof getGroupCueAnimation === 'function' &&
-    getGroupCueAnimation(group);
+  const quadrantCueAnimation =
+    typeof getQuadrantCueAnimation === 'function' &&
+    getQuadrantCueAnimation(quadrant);
 
-  const mobileGroupCueAnimations = isMobile &&
-    typeof getGroupCueAnimation === 'function' ?
-    Object.keys(GROUPS).map(GROUP => (
-      { [GROUP]: getGroupCueAnimation(GROUP) }
+  const mobileQuadrantCueAnimations = isMobile &&
+    typeof getQuadrantCueAnimation === 'function' ?
+    Object.keys(QUADRANT_PROPERTIES).map(quadrant => (
+      { [quadrant]: getQuadrantCueAnimation(quadrant) }
     )) : null;
 
   return (
@@ -170,7 +178,8 @@ const CircleTriad = ({
       sx={{
         display: 'flex',
         flexDirection:
-          group === 'left' || group === 'right' ? 'row' : 'column',
+          quadrant === QUADRANTS.LEFT || quadrant === QUADRANTS.RIGHT ?
+          'row' : 'column',
         justifyContent: 'center',
         alignItems: 'center',
       }}
@@ -180,10 +189,10 @@ const CircleTriad = ({
         sx={{
           position: 'absolute',
           display: [
-            groupCueAnimation && group === 'bottom' ?
+            quadrantCueAnimation && quadrant === QUADRANTS.BOTTOM ?
               'flex' : 'none', 'flex', 'flex',
           ],
-          width: group === 'left' ? '28em' : '14em',
+          width: quadrant === QUADRANTS.LEFT ? '28em' : '14em',
           minWidth:
             isMobile ? 'max-content' : ['14em', '14em', 'max-content',],
           height: '14em',
@@ -192,33 +201,36 @@ const CircleTriad = ({
         {
           expandedCircle === null &&
           (
-            activatedQuadrant === group ||
-            isGroupHeadingFadingOut ||
-            groupCueAnimation
+            activatedQuadrant === quadrant ||
+            isQuadrantHeadingFadingOut ||
+            quadrantCueAnimation
           ) &&
           !circleHeading &&
           (
             <Heading
-              group={group}
-              groupHeading={groupHeading}
-              groupCueAnimation={groupCueAnimation}
-              isFadingOut={isGroupHeadingFadingOut}
-              mobileGroupCueAnimations={mobileGroupCueAnimations}
+              quadrant={quadrant}
+              quadrantHeading={quadrantHeading}
+              quadrantCueAnimation={quadrantCueAnimation}
+              isFadingOut={isQuadrantHeadingFadingOut}
+              mobileQuadrantCueAnimations={mobileQuadrantCueAnimations}
             />
           )
         }
-        {expandedCircle === null && !groupCueAnimation && circleHeading && (
+        {expandedCircle === null && !quadrantCueAnimation && circleHeading && (
           <Heading
-            group={group}
+            quadrant={quadrant}
             circleHeading={circleHeading}
             isFadingOut={isCircleHeadingFadingOut}
           />
         )}
       </Box>
-      <CircleTriadContainer left={group === 'left'} right={group === 'right'}>
+      <CircleTriadContainer
+        left={quadrant === QUADRANTS.LEFT}
+        right={quadrant === QUADRANTS.RIGHT}
+      >
         {
-          circles.filter((circle) => circle.group === group)
-            .sort((a, b) => a.groupOrder > b.groupOrder ? 1 : -1)
+          circles.filter((circle) => circle.quadrant === quadrant)
+            .sort((a, b) => a.quadrantOrder > b.quadrantOrder ? 1 : -1)
             .map((circle) => (
               <OuterCircle
                 key={circle.index}
@@ -231,7 +243,7 @@ const CircleTriad = ({
                 onHoverCircle={onHoverCircle}
                 animateInReady={animateInReady}
                 hasAnimatedIn={hasAnimatedIn}
-                groupCueAnimation={groupCueAnimation}
+                quadrantCueAnimation={quadrantCueAnimation}
                 blockHoverEffects={blockHoverEffects}
                 easterEgged={easterEgged}
               />

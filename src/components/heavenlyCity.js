@@ -9,11 +9,38 @@ import Quadrilateral from './quadrilateral';
 import useDetectClickOutside from '../hooks/useDetectClickOutside';
 import {
   FADE_DURATION,
-  GROUPS,
   INITIAL_ANIMATION_DURATION,
+  QUADRANTS,
+  QUADRANT_PROPERTIES,
+  QUADRANT_ANGLES,
+  QUADRANT_DISTANCES,
 } from '../constants';
 
 
+// Helper functions for determining whether quadrant should be activated,
+// based on whether cursor position is within specified range of degrees
+const isWithinRange = (value, min, max) => value >= min && value < max;
+const isCursorInLeftQuadrant = (angle) => isWithinRange(
+  angle, QUADRANT_ANGLES.LEFT_MIN, QUADRANT_ANGLES.LEFT_MAX
+);
+const isCursorInRightQuadrant = (angle) => isWithinRange(
+  angle, QUADRANT_ANGLES.RIGHT_MIN, QUADRANT_ANGLES.RIGHT_MAX
+);
+const isCursorInTopQuadrant = (angle, yDistance) =>
+  ((angle > 0 && isWithinRange(
+    angle, QUADRANT_ANGLES.TOP_MIN, QUADRANT_ANGLES.TOP_MAX
+  )) ||
+  (angle < 0 && isWithinRange(
+    angle, -QUADRANT_ANGLES.TOP_MAX, -QUADRANT_ANGLES.TOP_MIN
+  ))) &&
+  yDistance > QUADRANT_DISTANCES.Y_TOP_THRESHOLD;
+const isCursorInBottomQuadrant = (angle) =>
+  ((angle > 0 && isWithinRange(
+    angle, QUADRANT_ANGLES.BOTTOM_MIN, QUADRANT_ANGLES.BOTTOM_MAX
+  )) ||
+  (angle < 0 && isWithinRange(
+    angle, -QUADRANT_ANGLES.BOTTOM_MAX, -QUADRANT_ANGLES.BOTTOM_MIN
+  )));
 
 const HeavenlyCity = ({ outerCircles }) => {
   const [cursorAngle, setCursorAngle] = useState(null);
@@ -24,9 +51,9 @@ const HeavenlyCity = ({ outerCircles }) => {
   const [activatedQuadrant, setActivatedQuadrant] = useState(null);
   const [animateInReady, setAnimateInReady] = useState(false);
   const [hasAnimatedIn, setHasAnimatedIn] = useState(false);
-  const [getGroupCueAnimation, setGetGroupCueAnimation] = useState(null);
+  const [getQuadrantCueAnimation, setGetQuadrantCueAnimation] = useState(null);
   const [
-    hasPlayedGroupCueAnimation, setHasPlayedGroupCueAnimation
+    hasPlayedQuadrantCueAnimation, setHasPlayedQuadrantCueAnimation
   ] = useState(false);
   const [easterEgged, setEasterEgged] = useState(null);
   const windowWidthRef = useRef();
@@ -106,39 +133,39 @@ const HeavenlyCity = ({ outerCircles }) => {
       }
     };
 
-    const activateQuadrant = (group) => {
+    const activateQuadrant = (quadrant) => {
       clearFadeOut();
-      setActivatedQuadrant(group);
+      setActivatedQuadrant(quadrant);
     };
 
     if (typeof window !== undefined && hoveredCircle === null) {
       const cursorAbsoluteDistFromCentreX = Math.abs(cursorDistFromCentreX);
       const cursorAbsoluteDistFromCentreY = Math.abs(cursorDistFromCentreY);
       if (
-        hasAnimatedIn && hasPlayedGroupCueAnimation &&
-        (cursorAbsoluteDistFromCentreX < window.innerWidth / 3) &&
-        (cursorAbsoluteDistFromCentreY < window.innerHeight / 2.5) &&
+        hasAnimatedIn && hasPlayedQuadrantCueAnimation &&
         (
-          cursorAbsoluteDistFromCentreX > 90 ||
-          cursorAbsoluteDistFromCentreY > 90
+          cursorAbsoluteDistFromCentreX <
+          window.innerWidth * QUADRANT_DISTANCES.WINDOW_X_RATIO
+        ) &&
+        (
+          cursorAbsoluteDistFromCentreY <
+          window.innerHeight * QUADRANT_DISTANCES.WINDOW_Y_RATIO
+        ) &&
+        (
+          cursorAbsoluteDistFromCentreX > QUADRANT_DISTANCES.X_THRESHOLD ||
+          cursorAbsoluteDistFromCentreY > QUADRANT_DISTANCES.Y_THRESHOLD
         )
       ) {
-        if (cursorAngle >= 55 && cursorAngle < 125) {
-          activateQuadrant('left');
+        if (isCursorInLeftQuadrant(cursorAngle)) {
+          activateQuadrant(QUADRANTS.LEFT);
         } else if (
-          ((cursorAngle > 0 && cursorAngle >= 145 && cursorAngle < 180) ||
-          (cursorAngle < 0 && cursorAngle >= -180 && cursorAngle < -145)) &&
-          cursorAbsoluteDistFromCentreY > 130
-          )
-        {
-          activateQuadrant('top');
-        } else if (cursorAngle >= -125 && cursorAngle < -55) {
-          activateQuadrant('right');
-        } else if (
-          (cursorAngle < 0 && cursorAngle >= -35) ||
-          (cursorAngle >= 0  && cursorAngle < 35))
-        {
-          activateQuadrant('bottom');
+          isCursorInTopQuadrant(cursorAngle, cursorAbsoluteDistFromCentreY)
+        ) {
+          activateQuadrant(QUADRANTS.TOP);
+        } else if (isCursorInRightQuadrant(cursorAngle)) {
+          activateQuadrant(QUADRANTS.RIGHT);
+        } else if (isCursorInBottomQuadrant(cursorAngle)) {
+          activateQuadrant(QUADRANTS.BOTTOM);
         } else {
           deactivateQuadrant();
         }
@@ -155,21 +182,21 @@ const HeavenlyCity = ({ outerCircles }) => {
     cursorDistFromCentreX,
     cursorDistFromCentreY,
     hasAnimatedIn,
-    hasPlayedGroupCueAnimation,
+    hasPlayedQuadrantCueAnimation,
     hoveredCircle,
   ]);
 
   useEffect(() => {
-    if (!hasPlayedGroupCueAnimation && hasAnimatedIn) {
+    if (!hasPlayedQuadrantCueAnimation && hasAnimatedIn) {
       const animationDuration = 1000;
 
       setTimeout(
-        () => setHasPlayedGroupCueAnimation(true),
-        GROUPS.left.animationDelay + animationDuration
+        () => setHasPlayedQuadrantCueAnimation(true),
+        QUADRANT_PROPERTIES[QUADRANTS.LEFT].animationDelay + animationDuration
       )
 
-      setGetGroupCueAnimation(() => {
-        return (group) => {
+      setGetQuadrantCueAnimation(() => {
+        return (quadrant) => {
           const animation = keyframes`
             0 {
               opacity: 0;
@@ -183,12 +210,12 @@ const HeavenlyCity = ({ outerCircles }) => {
           `;
           return {
             animation: `${animation} ${animationDuration}ms ease-in-out`,
-            animationDelay: `${GROUPS[group].animationDelay}ms`,
+            animationDelay: `${QUADRANT_PROPERTIES[quadrant].animationDelay}ms`,
           }
         }
       });
     };
-  }, [hasPlayedGroupCueAnimation, hasAnimatedIn,]);
+  }, [hasPlayedQuadrantCueAnimation, hasAnimatedIn,]);
 
   const runEasterEggAnimation = () => {
     if (!easterEgged) {
@@ -200,7 +227,7 @@ const HeavenlyCity = ({ outerCircles }) => {
   const onExpandCircle = (circleIndex) => {
     clearFadeOut();
     if (hasAnimatedIn) {
-      setHasPlayedGroupCueAnimation(true);
+      setHasPlayedQuadrantCueAnimation(true);
       setExpandedCircle(circleIndex);
     }
   };
@@ -268,7 +295,7 @@ const HeavenlyCity = ({ outerCircles }) => {
 
   const blockHoverEffects =
     !hasAnimatedIn ||
-    !hasPlayedGroupCueAnimation ||
+    !hasPlayedQuadrantCueAnimation ||
     expandedCircle ||
     easterEgged;
 
@@ -288,8 +315,8 @@ const HeavenlyCity = ({ outerCircles }) => {
         sx={{ width: '20em', margin: '0 auto', }}
       >
         <CircleTriad
-          group='top'
-          groupHeading={GROUPS.top.heading}
+          quadrant={QUADRANTS.TOP}
+          quadrantHeading={QUADRANT_PROPERTIES[QUADRANTS.TOP].heading}
           circles={outerCircles}
           expandedCircle={expandedCircle}
           onExpandCircle={onExpandCircle}
@@ -298,8 +325,8 @@ const HeavenlyCity = ({ outerCircles }) => {
           animateInReady={animateInReady}
           hasAnimatedIn={hasAnimatedIn}
           activatedQuadrant={activatedQuadrant}
-          getGroupCueAnimation={
-            !hasPlayedGroupCueAnimation && getGroupCueAnimation
+          getQuadrantCueAnimation={
+            !hasPlayedQuadrantCueAnimation && getQuadrantCueAnimation
           }
           blockHoverEffects={blockHoverEffects}
           easterEgged={easterEgged}
@@ -313,8 +340,8 @@ const HeavenlyCity = ({ outerCircles }) => {
           }}
         >
           <CircleTriad
-            group='left'
-            groupHeading={GROUPS.left.heading}
+            quadrant={QUADRANTS.LEFT}
+            quadrantHeading={QUADRANT_PROPERTIES[QUADRANTS.LEFT].heading}
             circles={outerCircles}
             expandedCircle={expandedCircle}
             onExpandCircle={onExpandCircle}
@@ -323,8 +350,8 @@ const HeavenlyCity = ({ outerCircles }) => {
             animateInReady={animateInReady}
             hasAnimatedIn={hasAnimatedIn}
             activatedQuadrant={activatedQuadrant}
-            getGroupCueAnimation={
-              !hasPlayedGroupCueAnimation && getGroupCueAnimation
+            getQuadrantCueAnimation={
+              !hasPlayedQuadrantCueAnimation && getQuadrantCueAnimation
             }
             blockHoverEffects={blockHoverEffects}
             easterEgged={easterEgged}
@@ -397,8 +424,8 @@ const HeavenlyCity = ({ outerCircles }) => {
             </Quadrilateral>
           </Quadrilateral>
           <CircleTriad
-            group='right'
-            groupHeading={GROUPS.right.heading}
+            quadrant={QUADRANTS.RIGHT}
+            quadrantHeading={QUADRANT_PROPERTIES[QUADRANTS.RIGHT].heading}
             circles={outerCircles}
             expandedCircle={expandedCircle}
             onExpandCircle={onExpandCircle}
@@ -407,16 +434,16 @@ const HeavenlyCity = ({ outerCircles }) => {
             animateInReady={animateInReady}
             hasAnimatedIn={hasAnimatedIn}
             activatedQuadrant={activatedQuadrant}
-            getGroupCueAnimation={
-              !hasPlayedGroupCueAnimation && getGroupCueAnimation
+            getQuadrantCueAnimation={
+              !hasPlayedQuadrantCueAnimation && getQuadrantCueAnimation
             }
             blockHoverEffects={blockHoverEffects}
             easterEgged={easterEgged}
           />
         </Box>
         <CircleTriad
-          group='bottom'
-          groupHeading={GROUPS.bottom.heading}
+          quadrant={QUADRANTS.BOTTOM}
+          quadrantHeading={QUADRANT_PROPERTIES[QUADRANTS.BOTTOM].heading}
           circles={outerCircles}
           expandedCircle={expandedCircle}
           onExpandCircle={onExpandCircle}
@@ -425,8 +452,8 @@ const HeavenlyCity = ({ outerCircles }) => {
           animateInReady={animateInReady}
           hasAnimatedIn={hasAnimatedIn}
           activatedQuadrant={activatedQuadrant}
-          getGroupCueAnimation={
-            !hasPlayedGroupCueAnimation && getGroupCueAnimation
+          getQuadrantCueAnimation={
+            !hasPlayedQuadrantCueAnimation && getQuadrantCueAnimation
           }
           blockHoverEffects={blockHoverEffects}
           easterEgged={easterEgged}

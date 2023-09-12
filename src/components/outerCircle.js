@@ -10,6 +10,7 @@ import {
   EXPAND_DURATION,
   FADE_DURATION,
   INITIAL_ANIMATION_DURATION,
+  QUADRANTS,
 } from '../constants';
 
 
@@ -35,7 +36,7 @@ const OuterCircle = ({
   animateInReady,
   hasAnimatedIn,
   quadrantIsActive,
-  groupCueAnimation,
+  quadrantCueAnimation,
   blockHoverEffects,
   easterEgged,
 }) => {
@@ -172,8 +173,11 @@ const OuterCircle = ({
         position: 'absolute',
         width: '21em',
         height: '21em',
-        top: `calc(50% - ${circle.group === 'left' ? '10.5' : '12.5'}em)`,
-        left: circle.group === 'left' ? '-0.5em' : 'calc(50% - 10.5em)',
+        top: `
+          calc(50% - ${circle.quadrant === QUADRANTS.LEFT ? '10.5' : '12.5'}em)
+        `,
+        left: circle.quadrant === QUADRANTS.LEFT ?
+          '-0.5em' : 'calc(50% - 10.5em)',
         boxShadow: '0 0 0.5em 0.25em rgba(0, 0, 0, 0.3)',
         zIndex: 10,
       }), EXPAND_DURATION);
@@ -235,7 +239,7 @@ const OuterCircle = ({
               expandedCircle === null &&
               !isHovered ? 1 : 0,
             transition: `opacity ${FADE_DURATION}ms ease-in-out`,
-            ...groupCueAnimation,
+            ...quadrantCueAnimation,
           }}
         />
       </Circle>

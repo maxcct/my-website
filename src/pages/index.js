@@ -58,9 +58,9 @@ export const outerCirclesQuery = graphql`
             slug
             heading
             link
-            group
+            quadrant
             position
-            groupOrder
+            quadrantOrder
             index
             initialTranslate
             expandedTranslate

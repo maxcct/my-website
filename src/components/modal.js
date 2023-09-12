@@ -19,6 +19,8 @@ import NHRPLogo from '../images/svg/nhrp_logo.svg';
 import ClariceLogo from '../images/svg/clarice_logo.svg';
 import QRILogo from '../images/svg/qri_logo.svg';
 
+import { QUADRANTS } from '../constants';
+
 
 const getCircleImage = (
   slug,
@@ -219,8 +221,12 @@ const Modal = ({
       sx={{
         display: 'flex',
         position: 'absolute',
-          top: `calc(50% - ${circle.group === 'left' ? '8' : '10'}em)`,
-        right: `calc(50% - ${circle.group === 'left' ? '16.55' : '8'}em)`,
+        top: `
+          calc(50% - ${circle.quadrant === QUADRANTS.LEFT ? '8' : '10'}em)
+        `,
+        right: `
+          calc(50% - ${circle.quadrant === QUADRANTS.LEFT ? '16.55' : '8'}em)
+        `,
         width: '16em',
         height: '16em',
         zIndex: 10,
