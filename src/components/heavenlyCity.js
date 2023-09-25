@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState, } from 'react';
-import { Box, } from '@mui/material';
+import { navigate } from 'gatsby';
+import { Box } from '@mui/material';
 import { keyframes } from '@mui/system';
 import debounce from 'lodash.debounce';
 
@@ -42,7 +43,7 @@ const isCursorInBottomQuadrant = (angle) =>
     angle, -QUADRANT_ANGLES.BOTTOM_MAX, -QUADRANT_ANGLES.BOTTOM_MIN
   )));
 
-const HeavenlyCity = ({ outerCircles }) => {
+const HeavenlyCity = ({ hash, outerCircles, }) => {
   const [cursorAngle, setCursorAngle] = useState(null);
   const [cursorDistFromCentreX, setCursorDistFromCentreX] = useState(0);
   const [cursorDistFromCentreY, setCursorDistFromCentreY] = useState(0);
@@ -60,18 +61,39 @@ const HeavenlyCity = ({ outerCircles }) => {
   const windowHeightRef = useRef();
   const containerRef = useRef();
   const fadeOutTimerRef = useRef(null);
-  useDetectClickOutside(containerRef, () => setExpandedCircle(null));
+
+  const changeExpandedCircle = useCallback((circleIndex) => {
+    if (hash) {
+      navigate('/');
+    }
+    setExpandedCircle(circleIndex);
+  }, [hash]);
+
+  useDetectClickOutside(containerRef, () => changeExpandedCircle(null));
 
   useEffect(() => {
+    if (hash && hash.includes('#') && hasAnimatedIn) {
+      setHasPlayedQuadrantCueAnimation(true);
+      changeExpandedCircle(parseInt(hash.slice(1)));
+    }
+  }, [hash, hasAnimatedIn, changeExpandedCircle,]);
+
+  useEffect(() => {
+    let hasAnimatedInTimeout;
     const onPageReady = () => {
       setAnimateInReady(true);
-      setTimeout(() => setHasAnimatedIn(true), INITIAL_ANIMATION_DURATION);
+      hasAnimatedInTimeout = setTimeout(
+        () => setHasAnimatedIn(true), INITIAL_ANIMATION_DURATION
+      );
     }
     if (document.readyState === 'complete') {
       onPageReady();
     } else if (typeof window !== undefined) {
       window.addEventListener('load', onPageReady);
-      return () => window.removeEventListener('load', onPageReady);
+      return () => {
+        clearTimeout(hasAnimatedInTimeout);
+        window.removeEventListener('load', onPageReady);
+      };
     }
   }, []);
 
@@ -130,6 +152,8 @@ const HeavenlyCity = ({ outerCircles }) => {
           );
           fadeOutTimerRef.current = null;
         }, FADE_DURATION);
+
+        return () => clearTimeout(fadeOutTimerRef.current);
       }
     };
 
@@ -187,10 +211,10 @@ const HeavenlyCity = ({ outerCircles }) => {
   ]);
 
   useEffect(() => {
-    if (!hasPlayedQuadrantCueAnimation && hasAnimatedIn) {
+    if (!hasPlayedQuadrantCueAnimation && hasAnimatedIn && !hash) {
       const animationDuration = 1000;
 
-      setTimeout(
+      const quadrantTimeoutAnimation = setTimeout(
         () => setHasPlayedQuadrantCueAnimation(true),
         QUADRANT_PROPERTIES[QUADRANTS.LEFT].animationDelay + animationDuration
       )
@@ -214,13 +238,17 @@ const HeavenlyCity = ({ outerCircles }) => {
           }
         }
       });
+
+      return () => clearTimeout(quadrantTimeoutAnimation);
     };
-  }, [hasPlayedQuadrantCueAnimation, hasAnimatedIn,]);
+  }, [hash, hasPlayedQuadrantCueAnimation, hasAnimatedIn,]);
 
   const runEasterEggAnimation = () => {
     if (!easterEgged) {
       setEasterEgged(true);
-      setTimeout(() => setEasterEgged(false), 1600);
+      const easterEggTimeout = setTimeout(() => setEasterEgged(false), 1600);
+
+      return () =>  clearTimeout(easterEggTimeout);
     }
   };
 
@@ -228,7 +256,7 @@ const HeavenlyCity = ({ outerCircles }) => {
     clearFadeOut();
     if (hasAnimatedIn) {
       setHasPlayedQuadrantCueAnimation(true);
-      setExpandedCircle(circleIndex);
+      changeExpandedCircle(circleIndex);
     }
   };
 
@@ -243,6 +271,8 @@ const HeavenlyCity = ({ outerCircles }) => {
           );
           fadeOutTimerRef.current = null;
         }, FADE_DURATION);
+
+        return () => clearTimeout(fadeOutTimerRef.current);
       } else {
         setHoveredCircle(circleIndex);
       }

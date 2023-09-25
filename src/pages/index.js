@@ -8,7 +8,7 @@ import Seo from "../components/seo"
 import * as styles from "../components/index.module.css"
 
 
-const IndexPage = ({ data }) => {
+const IndexPage = ({ data, location, }) => {
   const outerCircles = data.allMarkdownRemark.edges.map(({ node }) => (
     {
       ...node.frontmatter,
@@ -33,7 +33,7 @@ const IndexPage = ({ data }) => {
     <ThemeProvider theme={theme}>
       <Layout>
         <div style={{ height: '100%', }} className={styles.textCenter}>
-          <HeavenlyCity outerCircles={outerCircles} />
+          <HeavenlyCity hash={location.hash} outerCircles={outerCircles} />
         </div>
       </Layout>
     </ThemeProvider>

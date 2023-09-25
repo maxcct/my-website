@@ -169,7 +169,7 @@ const OuterCircle = ({
     if (
       isMobile && isExpanded && previousExpandedCircle !== circle.index
     ) {
-      setTimeout(() => setMobileContainerStylesOverride({
+      const stylesOverrideTimeout = setTimeout(() => setMobileContainerStylesOverride({
         position: 'absolute',
         width: '21em',
         height: '21em',
@@ -181,6 +181,8 @@ const OuterCircle = ({
         boxShadow: '0 0 0.5em 0.25em rgba(0, 0, 0, 0.3)',
         zIndex: 10,
       }), EXPAND_DURATION);
+
+      return () => clearTimeout(stylesOverrideTimeout);
     } else if (isMobile && !isExpanded) {
       setMobileContainerStylesOverride(null);
     }

@@ -42,12 +42,17 @@ const Heading = ({
   const [mobileAnimationQuadrant, setMobileAnimationQuadrant] = useState(null);
 
   useEffect(() => {
+    const mobileAnimationQuadrantTimeouts = {};
     if (isMobile && quadrantCueAnimation && quadrant === QUADRANTS.BOTTOM) {
       Object.keys(QUADRANT_PROPERTIES).forEach((quadrant) =>
-        setTimeout(() =>
+        mobileAnimationQuadrantTimeouts.quadrant = setTimeout(() =>
           setMobileAnimationQuadrant(quadrant),
           QUADRANT_PROPERTIES[quadrant].animationDelay
         )
+      );
+
+      return () => Object.values(mobileAnimationQuadrantTimeouts).forEach(
+        (timeout) => clearTimeout(timeout)
       );
     }
   }, [quadrant, quadrantCueAnimation,]);
